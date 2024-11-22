@@ -1,4 +1,4 @@
-SRC_FILES = main.cpp huffman/huffman.cpp huffman/tree/tree.cpp
+SRC_FILES = main.cpp huffman/huffman.cpp huffman/tree/tree.cpp huffman/message/message.cpp huffman/buffer/buffer.cpp
 TARGET_FILE = huffman.exe
 
 build:

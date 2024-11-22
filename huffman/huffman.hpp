@@ -3,7 +3,9 @@
 #include <istream>
 #include <ostream>
 
+#include "message/message.hpp"
+
 namespace Huffman {
-	std::ostream encode(std::istream& input);
+	EncodedMessage encode(std::istream& input);
 	std::ostream decode(std::istream& input);
 }

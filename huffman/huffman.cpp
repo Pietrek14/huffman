@@ -11,16 +11,18 @@
 
 #include <iostream>
 
-std::ostream Huffman::encode(std::istream& input) {
+Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 	// Count occurances (probablities) of the characters in the text
 	std::array<uint64_t, 255> occurances;
 	std::fill(occurances.begin(), occurances.end(), 0);
 
+	std::string message = "";
+
 	uint8_t current_character;
 	while(input >> current_character) {
 		occurances[current_character - 1]++;
+		message += current_character;
 	}
-	input.seekg(0);
 
 	// Create a list of one-node Huffman trees to store the characters with their probablities (occurence count)
 	// Using a priority queue to mitigate the cost of looking for the least probable character in each iteration
@@ -46,7 +48,6 @@ std::ostream Huffman::encode(std::istream& input) {
 		Tree tree2 = std::move(const_cast<Tree&>(tree_queue.top()));
 		tree_queue.pop();
 
-		// Because we're using a priority queue, we don't have to check which tree has the bigger probability
 		Tree new_tree(std::move(tree1), std::move(tree2));
 		tree_queue.push(std::move(new_tree));
 	}
@@ -56,13 +57,18 @@ std::ostream Huffman::encode(std::istream& input) {
 	// Get the code as a dictionary
 	Huffman::Tree::CodeDictionary code_dictionary = huffman_tree.get_codes();
 
-	for(auto [character, code] : code_dictionary) {
-		std::cout << character << ": ";
+	// Encode the message into a bit buffer
+	Buffer buffer;
+
+	for(char current : message) {
+		auto code = code_dictionary[current];
 
 		for(bool bit : code) {
-			std::cout << (bit ? '1' : '0');
+			buffer <<= bit;
 		}
-
-		std::cout << std::endl;
 	}
+
+	EncodedMessage result = { std::move(huffman_tree), std::move(buffer) };
+
+	return result;
 }

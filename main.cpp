@@ -12,7 +12,15 @@ int main() {
 
 	std::stringstream input_stream(input);
 
-	Huffman::encode(input_stream);
+	Huffman::EncodedMessage message = Huffman::encode(input_stream);
+
+	std::cout << "Encoded message: ";
+
+	auto buffer = message.messageBuffer;
+
+	for(auto it = buffer.bit_begin(); it != buffer.bit_end(); ++it) {
+		std::cout << (*it ? '1' : '0');
+	}
 
 	return 0;
 }
