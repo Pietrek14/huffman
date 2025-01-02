@@ -19,6 +19,8 @@ namespace Huffman {
 		void operator<<=(bool bit);
 		Buffer operator<<(std::byte byte) const;
 		void operator<<=(std::byte byte);
+		Buffer operator<<(Buffer buffer) const;
+		void operator<<=(Buffer buffer);
 
 		uint64_t get_length() const;
 

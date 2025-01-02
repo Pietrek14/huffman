@@ -41,6 +41,21 @@ Huffman::Buffer Huffman::Buffer::operator<<(std::byte byte) const {
 	return result;
 }
 
+void Huffman::Buffer::operator<<=(Buffer buffer) {
+	// TODO: There are quicker ways to do this (although more complicated)
+	for(auto it = buffer.bit_begin(); it != buffer.bit_end(); it++) {
+		*this <<= *it;
+	}
+}
+
+Huffman::Buffer Huffman::Buffer::operator<<(Buffer buffer) const {
+	Buffer result = *this;
+
+	result <<= buffer;
+
+	return result;
+}
+
 uint64_t Huffman::Buffer::get_length() const {
 	return (m_Buffer.size() - 1) * 8 + m_LastByteLength;
 }

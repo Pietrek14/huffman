@@ -9,10 +9,10 @@
 
 namespace Huffman {
 	struct EncodedMessage {
-		Tree huffmanTree;
-		Buffer messageBuffer;
+		Tree huffman_tree;
+		Buffer message_buffer;
 
-		std::ostream serialize() const;
+		void serialize(std::ostream& output) const;
 		static EncodedMessage deserialize(std::istream input);
 	};
 };

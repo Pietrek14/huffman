@@ -69,3 +69,24 @@ Huffman::Tree::CodeDictionary Huffman::Tree::get_codes() const {
 
 	return result;
 }
+
+Huffman::Buffer Huffman::Tree::serialize() const {
+	Buffer output;
+
+	preorder_serialization(output, m_Root);
+
+	return output;
+}
+
+void Huffman::Tree::preorder_serialization(Buffer& output, const std::unique_ptr<Node>& current_node) const {
+	if(current_node->get_character()) {
+		output <<= true;
+
+		output <<= std::byte(current_node->get_character());
+	} else {
+		output <<= false;
+
+		preorder_serialization(output, current_node->get_left());
+		preorder_serialization(output, current_node->get_right());
+	}
+}
