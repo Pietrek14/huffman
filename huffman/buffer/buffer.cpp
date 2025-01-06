@@ -5,7 +5,7 @@ Huffman::Buffer::Buffer()
 
 void Huffman::Buffer::operator<<=(bool bit) {
 	if(m_LastByteLength == 8) {
-		m_Buffer.push_back(std::byte(bit));
+		m_Buffer.push_back(std::byte(bit) << 7);
 		m_LastByteLength = 1;
 
 		return;
@@ -13,7 +13,7 @@ void Huffman::Buffer::operator<<=(bool bit) {
 
 	std::byte& last = m_Buffer[m_Buffer.size() - 1];
 
-	last |= (std::byte)bit << m_LastByteLength;
+	last |= (std::byte)bit << (7 - m_LastByteLength);
 
 	m_LastByteLength++;
 }
@@ -29,8 +29,8 @@ Huffman::Buffer Huffman::Buffer::operator<<(bool bit) const {
 void Huffman::Buffer::operator<<=(std::byte byte) {
 	std::byte& last = m_Buffer[m_Buffer.size() - 1];
 
-	last |= byte << m_LastByteLength;
-	m_Buffer.push_back(byte >> (8 - m_LastByteLength));
+	last |= byte >> m_LastByteLength;
+	m_Buffer.push_back(byte << (8 - m_LastByteLength));
 }
 
 Huffman::Buffer Huffman::Buffer::operator<<(std::byte byte) const {
@@ -110,5 +110,17 @@ bool Huffman::Buffer::BitIterator::operator!=(Huffman::Buffer::BitIterator other
 bool Huffman::Buffer::BitIterator::operator*() const {
 	uint8_t num = (int)(*m_BufferIterator);
 
-	return (bool)((std::byte)(1 << m_BitIndex) & (*m_BufferIterator));
+	return (bool)((std::byte)(1 << (7 - m_BitIndex)) & (*m_BufferIterator));
+}
+
+std::byte Huffman::Buffer::BitIterator::next_byte() {
+	// TODO: Optimize this to use two bytes and shifing instead of going over all bits seperately
+	std::byte byte = std::byte(0);
+
+	for(uint8_t i = 0; i < 8; i++) {
+		byte |= std::byte(*(*this) << (7 - i));
+		++(*this);
+	}
+
+	return byte;
 }

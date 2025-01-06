@@ -13,6 +13,6 @@ namespace Huffman {
 		Buffer message_buffer;
 
 		void serialize(std::ostream& output) const;
-		static EncodedMessage deserialize(std::istream input);
+		static EncodedMessage deserialize(std::istream& input);
 	};
 };

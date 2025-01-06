@@ -45,11 +45,19 @@ namespace Huffman {
 		/// @return A buffer which the tree is serialized into
 		Buffer serialize() const;
 
+		/// @brief Deserializes a tree serialized using the `serialize` method
+		/// @param buffer A buffer containing the serialized data
+		/// @return A tree constructed from the serialized data
+		static Tree deserialize(const Buffer& buffer);
+
 	private:
 		// A helper function for the `get_codes` method
 		void generate_codes(CodeDictionary& code, const std::unique_ptr<Node>& current_node, Code current_code) const;
 
 		// A helper function for the `serialize` method
 		void preorder_serialization(Buffer& output, const std::unique_ptr<Node>& current_node) const;
+
+		// A helper function for the `deserialize` method
+		static void preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input);
 	};
 };

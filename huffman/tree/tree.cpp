@@ -90,3 +90,40 @@ void Huffman::Tree::preorder_serialization(Buffer& output, const std::unique_ptr
 		preorder_serialization(output, current_node->get_right());
 	}
 }
+
+Huffman::Tree Huffman::Tree::deserialize(const Buffer& buffer) {
+	auto it = buffer.bit_begin();
+
+	if(*it) {
+		++it;
+		return Tree(std::to_integer<uint8_t>(it.next_byte()), 0);
+	}
+
+	++it;
+
+	Tree result('\0', 0);
+
+	preorder_deserialization(result.m_Root, it);
+
+	return result;
+}
+
+void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input) {
+	for(int i = 0; i < 2; i++) {
+		bool character_in_node = *input;
+		++input;
+
+		if(character_in_node) {
+			auto character = std::to_integer<uint8_t>(input.next_byte());
+
+			root->push_left(std::make_unique<Node>(character, 0));
+		} else {
+			auto node = std::make_unique<Node>('\0', 0);
+			preorder_deserialization(node, input);
+			if(i == 0)
+				root->push_left(std::move(node));
+			else
+				root->push_right(std::move(node));
+		}
+	}
+}

@@ -23,12 +23,29 @@ int main() {
 		std::cout << (*it ? '1' : '0');
 	}
 
+	std::cout << '\n';
+
 	std::ofstream output;
 	output.open("out.hff", std::ios::binary | std::ios::out);
 
 	message.serialize(output);
 
 	output.close();
+
+	std::ifstream input_file;
+	input_file.open("out.hff", std::ios::binary | std::ios::in);
+
+	auto deserialized_message = Huffman::EncodedMessage::deserialize(input_file);
+
+	input_file.close();
+
+	std::cout << "Encoded message: ";
+
+	for(auto it = deserialized_message.message_buffer.bit_begin(); it != deserialized_message.message_buffer.bit_end(); ++it) {
+		std::cout << (*it ? '1' : '0');
+	}
+
+	std::cout << '\n';
 
 	return 0;
 }

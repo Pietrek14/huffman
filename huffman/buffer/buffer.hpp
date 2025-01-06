@@ -36,6 +36,7 @@ namespace Huffman {
 			bool operator==(BitIterator other) const;
 			bool operator!=(BitIterator other) const;
 			bool operator*() const;
+			std::byte next_byte();
 
 			using iterator_category = std::input_iterator_tag;
 			using value_type = bool;
