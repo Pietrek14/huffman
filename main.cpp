@@ -47,5 +47,9 @@ int main() {
 
 	std::cout << '\n';
 
+	std::cout << "Decoded message: ";
+	Huffman::decode(deserialized_message, std::cout);
+	std::cout << '\n';
+
 	return 0;
 }

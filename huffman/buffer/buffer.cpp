@@ -56,6 +56,33 @@ Huffman::Buffer Huffman::Buffer::operator<<(Buffer buffer) const {
 	return result;
 }
 
+bool Huffman::Buffer::operator==(const Buffer& buffer) const {
+	if(get_length() != buffer.get_length()) {
+		return false;
+	}
+
+	for(uint32_t i = 0; i < m_Buffer.size(); i++) {
+		if(m_Buffer[i] != buffer.m_Buffer[i])
+			return false;
+	}
+
+	return true;
+}
+
+size_t Huffman::Buffer::hash() const {
+	size_t seed = m_Buffer.size();
+
+	for(std::byte byte : m_Buffer) {
+		seed ^= std::to_integer<uint8_t>(byte) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+
+	return seed;
+}
+
+size_t std::hash<Huffman::Buffer>::operator()(const Huffman::Buffer& buffer) const {
+	return buffer.hash();
+}
+
 uint64_t Huffman::Buffer::get_length() const {
 	return (m_Buffer.size() - 1) * 8 + m_LastByteLength;
 }

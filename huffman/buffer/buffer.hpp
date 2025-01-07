@@ -22,6 +22,10 @@ namespace Huffman {
 		Buffer operator<<(Buffer buffer) const;
 		void operator<<=(Buffer buffer);
 
+		// Necessary to be used as keys in a dictionary
+		bool operator==(const Buffer& other) const;
+		size_t hash() const;
+
 		uint64_t get_length() const;
 
 		// Iterators through the stored data are the only way to access it
@@ -51,4 +55,10 @@ namespace Huffman {
 		std::vector<std::byte>::const_iterator begin() const;
 		std::vector<std::byte>::const_iterator end() const;
 	};
+};
+
+template <>
+struct std::hash<Huffman::Buffer>
+{
+	size_t operator()(const Huffman::Buffer& buffer) const;
 };

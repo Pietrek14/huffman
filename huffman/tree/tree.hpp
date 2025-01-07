@@ -29,8 +29,9 @@ namespace Huffman {
 		std::unique_ptr<Node> m_Root;
 
 	public:
-		using Code = std::vector<bool>;
+		using Code = Buffer;
 		using CodeDictionary = std::unordered_map<uint8_t, Code>;
+		using CharacterDictionary = std::unordered_map<Code, uint8_t>;
 
 		/// @brief Initialize a single-node Huffman tree
 		Tree(uint8_t character, uint64_t occurences);
@@ -40,6 +41,7 @@ namespace Huffman {
 
 		uint64_t get_occurances() const;
 		CodeDictionary get_codes() const;
+		CharacterDictionary get_codes_for_decoding() const;
 
 		/// @brief Serializes the tree using preorder traversal
 		/// @return A buffer which the tree is serialized into
@@ -53,6 +55,9 @@ namespace Huffman {
 	private:
 		// A helper function for the `get_codes` method
 		void generate_codes(CodeDictionary& code, const std::unique_ptr<Node>& current_node, Code current_code) const;
+
+		// A helper function for the `get_codes_for_decoding` method
+		void generate_codes_for_decoding(CharacterDictionary& code, const std::unique_ptr<Node>& current_node, Code current_code) const;
 
 		// A helper function for the `serialize` method
 		void preorder_serialization(Buffer& output, const std::unique_ptr<Node>& current_node) const;

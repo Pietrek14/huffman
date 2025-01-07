@@ -9,8 +9,6 @@
 #include <queue>
 #include <vector>
 
-#include <iostream>
-
 Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 	// Count occurances (probablities) of the characters in the text
 	std::array<uint64_t, 255> occurances;
@@ -63,12 +61,27 @@ Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 	for(char current : message) {
 		auto code = code_dictionary[current];
 
-		for(bool bit : code) {
-			buffer <<= bit;
-		}
+		buffer <<= code;
 	}
 
 	EncodedMessage result = { std::move(huffman_tree), std::move(buffer) };
 
 	return result;
+}
+
+void Huffman::decode(const EncodedMessage& input, std::ostream& output) {
+	// Get the code as a dictionary
+	Huffman::Tree::CharacterDictionary code_dictionary = input.huffman_tree.get_codes_for_decoding();
+
+	// Decode the message
+	Buffer current;
+
+	for(auto it = input.message_buffer.bit_begin(); it != input.message_buffer.bit_end(); ++it) {
+		current <<= *it;
+
+		if(code_dictionary.find(current) != code_dictionary.end()) {
+			output << code_dictionary[current];
+			current = Buffer();
+		}
+	}
 }

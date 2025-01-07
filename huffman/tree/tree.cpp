@@ -53,10 +53,10 @@ void Huffman::Tree::generate_codes(CodeDictionary& code_dict, const std::unique_
 	}
 
 	Code left_code = current_code;
-	left_code.push_back(false);
+	left_code <<= false;
 
 	Code right_code = current_code;
-	right_code.push_back(true);
+	right_code <<= true;
 
 	generate_codes(code_dict, current_node->get_left(), left_code);
 	generate_codes(code_dict, current_node->get_right(), right_code);
@@ -66,6 +66,30 @@ Huffman::Tree::CodeDictionary Huffman::Tree::get_codes() const {
 	CodeDictionary result;
 
 	generate_codes(result, m_Root, Code());
+
+	return result;
+}
+
+void Huffman::Tree::generate_codes_for_decoding(CharacterDictionary& code_dict, const std::unique_ptr<Node>& current_node, Code current_code) const {
+	if(current_node->get_character() != '\0') {
+		code_dict[current_code] = current_node->get_character();
+		return;
+	}
+
+	Code left_code = current_code;
+	left_code <<= false;
+
+	Code right_code = current_code;
+	right_code <<= true;
+
+	generate_codes_for_decoding(code_dict, current_node->get_left(), left_code);
+	generate_codes_for_decoding(code_dict, current_node->get_right(), right_code);
+}
+
+Huffman::Tree::CharacterDictionary Huffman::Tree::get_codes_for_decoding() const {
+	CharacterDictionary result;
+
+	generate_codes_for_decoding(result, m_Root, Code());
 
 	return result;
 }
@@ -116,7 +140,10 @@ void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer
 		if(character_in_node) {
 			auto character = std::to_integer<uint8_t>(input.next_byte());
 
-			root->push_left(std::make_unique<Node>(character, 0));
+			if(i == 0)
+				root->push_left(std::make_unique<Node>(character, 0));
+			else
+				root->push_right(std::make_unique<Node>(character, 0));
 		} else {
 			auto node = std::make_unique<Node>('\0', 0);
 			preorder_deserialization(node, input);

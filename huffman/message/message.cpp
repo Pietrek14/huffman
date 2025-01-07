@@ -96,7 +96,12 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	}
 
 	for(uint8_t i = 0; i < content_buffer_bits_num % 8; i++) {
-		content_buffer <<= static_cast<bool>(content_buffer_bytes[content_buffer_bytes_num - 1] & (1 << i));
+		content_buffer <<= static_cast<bool>(content_buffer_bytes[content_buffer_bytes_num - 1] & (1 << (7 - i)));
+	}
+
+	// If there's no padding
+	if(content_buffer_bits_num % 8 == 0) {
+		content_buffer <<= std::byte(content_buffer_bytes[content_buffer_bytes_num - 1]);
 	}
 
 	delete[] content_buffer_bytes;

@@ -7,5 +7,5 @@
 
 namespace Huffman {
 	EncodedMessage encode(std::istream& input);
-	std::ostream decode(const EncodedMessage& input);
+	void decode(const EncodedMessage& input, std::ostream& output);
 }
