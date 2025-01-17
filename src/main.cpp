@@ -4,7 +4,7 @@
 
 #include "huffman/huffman.hpp"
 
-int main() {
+int main(int argc, const char* argv[]) {
 	std::cout << "hello\n";
 
 	std::string input;
