@@ -2,6 +2,7 @@
 #include <vector>
 #include <stdexcept>
 
+#include "huffman/huffman.hpp"
 #include "huffman/message/message.hpp"
 #include "interface.hpp"
 
@@ -38,6 +39,10 @@ int main(int argc, const char* argv[]) {
 		return 1;
 	} catch(const Action::FailedFileWriteException& e) {
 		std::cerr << "Failed to write to file '" << e.get_filename() << "'. Make sure you have the necessary permissions.\n";
+
+		return 1;
+	} catch(const Huffman::OneCharacterSourceException& e) {
+		std::cerr << "Encoding single character sequences is currently not supported.\n";
 
 		return 1;
 	} catch(const Huffman::EncodedMessage::UnexpectedEofException& e) {

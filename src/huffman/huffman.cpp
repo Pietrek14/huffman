@@ -18,10 +18,25 @@ Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 
 	input >> std::noskipws;
 
-	char current_character;
+	char current_character, prev_character = '\0';
+	bool multiple_chars = false;
 	while(input >> current_character) {
 		occurances[current_character - 1]++;
 		message += current_character;
+
+		if(prev_character != '\0' && prev_character != current_character) {
+			multiple_chars = true;
+		}
+
+		prev_character = current_character;
+	}
+
+	if(!multiple_chars) {
+		// Unfortunately we have to do that because of how we store the data
+		// If we stored the length of the original message instead of the message buffer
+		// We would be able to reconstruct the message, but that would require a rework
+		// Of the `EncodedMessage` class
+		throw OneCharacterSourceException();
 	}
 
 	// Create a list of one-node Huffman trees to store the characters with their probablities (occurence count)
@@ -86,4 +101,8 @@ void Huffman::decode(const EncodedMessage& input, std::ostream& output) {
 			current = Buffer();
 		}
 	}
+}
+
+const char* Huffman::OneCharacterSourceException::what() const noexcept {
+	return "Encoding single character sequences is currently unsupported.";
 }
