@@ -118,43 +118,37 @@ void Huffman::Tree::preorder_serialization(Buffer& output, const std::unique_ptr
 Huffman::Tree Huffman::Tree::deserialize(const Buffer& buffer) {
 	auto it = buffer.bit_begin();
 
-	if(*it) {
+	try {
+		if(*it) {
+			++it;
+			return Tree(std::to_integer<uint8_t>(it.next_byte(buffer.bit_end())), 0);
+		}
+
 		++it;
-		return Tree(std::to_integer<uint8_t>(it.next_byte()), 0);
+
+		Tree result('\0', 0);
+
+		preorder_deserialization(result.m_Root, it, buffer.bit_end());
+
+		return result;
+	} catch(const Buffer::BitIterator::IteratorEndReachedException& e) {
+		throw DeserializationException();
 	}
-
-	++it;
-
-	Tree result('\0', 0);
-
-	preorder_deserialization(result.m_Root, it, buffer.bit_end());
-
-	return result;
 }
-
-#include <iostream>
 
 void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input, const Buffer::BitIterator& end) {
 	for(int i = 0; i < 2; i++) {
 		bool character_in_node = *input;
 		++input;
 
-		if(input == end) {
-			throw "shit";
-		}
-
 		if(character_in_node) {
-			auto character = std::to_integer<uint8_t>(input.next_byte());
-
-			// std::cout << "on character: " << character << '\n';
+			auto character = std::to_integer<uint8_t>(input.next_byte(end));
 
 			if(i == 0)
 				root->push_left(std::make_unique<Node>(character, 0));
 			else
 				root->push_right(std::make_unique<Node>(character, 0));
 		} else {
-			// std::cout << "empty node\n";
-
 			auto node = std::make_unique<Node>('\0', 0);
 			preorder_deserialization(node, input, end);
 			if(i == 0)
@@ -163,4 +157,12 @@ void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer
 				root->push_right(std::move(node));
 		}
 	}
+}
+
+Huffman::Tree::DeserializationException::DeserializationException() {
+	m_Message = "Serialized tree data is invalid.";
+}
+
+const char* Huffman::Tree::DeserializationException::what() const noexcept {
+	return m_Message.c_str();
 }

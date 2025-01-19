@@ -2,7 +2,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include "huffman/buffer/buffer.hpp"
+#include "huffman/message/message.hpp"
 #include "interface.hpp"
 
 int main(int argc, const char* argv[]) {
@@ -38,6 +38,33 @@ int main(int argc, const char* argv[]) {
 		return 1;
 	} catch(const Action::FailedFileWriteException& e) {
 		std::cerr << "Failed to write to file '" << e.get_filename() << "'. Make sure you have the necessary permissions.\n";
+
+		return 1;
+	} catch(const Huffman::EncodedMessage::UnexpectedEofException& e) {
+		std::cerr << "The file ended unexpectedly. Make sure you have the entire file.\n";
+
+		return 1;
+	} catch(const Huffman::EncodedMessage::InvalidHeaderException& e) {
+		std::cerr
+			<< "Invalid file header. Expected '" << e.get_expected_header() << "', got '" << e.get_file_header()
+			<< "'. Given file may not be a hff file.\n";
+
+		return 1;
+	} catch(const Huffman::EncodedMessage::WrongVersionException& e) {
+		std::cerr
+			<< "Your software is out of date. File was encoded with ver " << static_cast<uint32_t>(e.get_file_version())
+			<< ". You're using ver " << static_cast<uint32_t>(e.get_software_version()) << ".\n";
+
+		return 1;
+	} catch(const Huffman::EncodedMessage::InvalidTreeDataException& e) {
+		std::cerr << "The tree data is invalid. Given file may be corrupted.\n";
+
+		return 1;
+	} catch(const Huffman::EncodedMessage::InvalidFooterException& e) {
+		std::cerr << "Invalid file footer. Expected '" << e.get_expected_footer()
+			<< "', got '" << e.get_file_footer() << "'. You can try fixing the error "
+			<< "by changing the last two characters to '" << e.get_expected_footer()
+			<< "', but an invalid footer suggests a corrupted file.\n";
 
 		return 1;
 	}

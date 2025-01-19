@@ -40,13 +40,23 @@ namespace Huffman {
 			bool operator==(BitIterator other) const;
 			bool operator!=(BitIterator other) const;
 			bool operator*() const;
-			std::byte next_byte();
+			std::byte next_byte_unsafe();
+			std::byte next_byte(const BitIterator& end);
 
 			using iterator_category = std::input_iterator_tag;
 			using value_type = bool;
 			using difference_type = std::ptrdiff_t;
 			using pointer = bool*;
 			using reference = bool&;
+
+			class IteratorEndReachedException : public std::exception {
+				std::string m_Message;
+
+			public:
+				IteratorEndReachedException();
+
+				const char* what() const noexcept override;
+			};
 		};
 
 		BitIterator bit_begin() const;

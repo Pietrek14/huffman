@@ -64,5 +64,15 @@ namespace Huffman {
 
 		// A helper function for the `deserialize` method
 		static void preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input, const Buffer::BitIterator& end);
+
+	public:
+		class DeserializationException : public std::exception {
+			std::string m_Message;
+
+		public:
+			DeserializationException();
+
+			const char* what() const noexcept override;
+		};
 	};
 };

@@ -144,7 +144,7 @@ bool Huffman::Buffer::BitIterator::operator*() const {
 	return (bool)((std::byte)(1 << (7 - m_BitIndex)) & (*m_BufferIterator));
 }
 
-std::byte Huffman::Buffer::BitIterator::next_byte() {
+std::byte Huffman::Buffer::BitIterator::next_byte_unsafe() {
 	// TODO: Optimize this to use two bytes and shifing instead of going over all bits seperately
 	std::byte byte = std::byte(0);
 
@@ -154,4 +154,29 @@ std::byte Huffman::Buffer::BitIterator::next_byte() {
 	}
 
 	return byte;
+}
+
+std::byte Huffman::Buffer::BitIterator::next_byte(const BitIterator& end) {
+	// TODO: Optimize this to use two bytes and shifing instead of going over all bits seperately
+	std::byte byte = std::byte(0);
+
+	for(uint8_t i = 0; i < 8; i++) {
+		byte |= std::byte(*(*this) << (7 - i));
+
+		if(*this == end) {
+			throw IteratorEndReachedException();
+		}
+
+		++(*this);
+	}
+
+	return byte;
+}
+
+Huffman::Buffer::BitIterator::IteratorEndReachedException::IteratorEndReachedException() {
+	m_Message = "The iterator reached its end unexpectedly.";
+}
+
+const char* Huffman::Buffer::BitIterator::IteratorEndReachedException::what() const noexcept {
+	return m_Message.c_str();
 }

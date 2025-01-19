@@ -1,5 +1,6 @@
 #include "message.hpp"
 
+#include <string>
 #include <vector>
 
 #include "../info.hpp"
@@ -46,23 +47,26 @@ void Huffman::EncodedMessage::serialize(std::ostream& output) const {
 	output.write("XX", 2);
 }
 
-// TODO: Implement exceptions for this function
-#include <iostream>
+void Huffman::EncodedMessage::ensure_stream_read_success(std::istream& stream) {
+	if(stream.eof()) {
+		throw UnexpectedEofException();
+	}
+}
 
 Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input) {
 	// Header section
 	char header_section[4];
 	input.read(header_section, 4);
+	ensure_stream_read_success(input);
 
-	if(header_section[0] != 'H' || header_section[1] != 'F' || header_section[2] != 'F') {
-		std::cerr << "Invalid header! Given file may not be a hff file.\n";
-		throw 1;
+	std::string header = std::string() + header_section[0] + header_section[1] + header_section[2];
+
+	if(header != "HFF") {
+		throw InvalidHeaderException(header, "HFF");
 	}
 
 	if(header_section[3] != Huffman::CURRENT_VERSION) {
-		std::cerr << "Your software is out of date. File was encoded with ver " << (int)header_section[3]
-			<< ". You're using ver " << (int)Huffman::CURRENT_VERSION << '\n';
-		throw 1;
+		throw WrongVersionException(header_section[3], Huffman::CURRENT_VERSION);
 	}
 
 	// Content section
@@ -70,6 +74,7 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	// TODO: Check if the bytes are actually in the file
 	char tree_size_chars[2];
 	input.read(tree_size_chars, 2);
+	ensure_stream_read_success(input);
 	std::byte tree_size_bytes[2];
 	for(uint8_t i = 0; i < 4; i++) {
 		tree_size_bytes[i] = std::byte(tree_size_chars[i]);
@@ -79,6 +84,7 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 
 	char message_size_chars[4];
 	input.read(message_size_chars, 4);
+	ensure_stream_read_success(input);
 	std::byte message_size_bytes[4];
 	for(uint8_t i = 0; i < 4; i++) {
 		message_size_bytes[i] = std::byte(message_size_chars[i]);
@@ -96,6 +102,7 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 
 	// This can fail if the file ends unexpectedly
 	input.read(content_buffer_bytes, content_buffer_bytes_num);
+	ensure_stream_read_success(input);
 
 	Buffer content_buffer;
 
@@ -128,17 +135,79 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 		index++;
 	}
 
-	Tree tree = Tree::deserialize(tree_buffer);
+	try {
+		Tree tree = Tree::deserialize(tree_buffer);
 
-	// Footer section
-	char footer_bytes[2];
+		// Footer section
+		char footer_bytes[2];
+		input.read(footer_bytes, 2);
+		ensure_stream_read_success(input);
 
-	input.read(footer_bytes, 2);
+		if(footer_bytes[0] != 'X' || footer_bytes[1] != 'X') {
+			throw InvalidFooterException(std::string() + footer_bytes[0] + footer_bytes[1], "XX");
+		}
 
-	if(footer_bytes[0] != 'X' || footer_bytes[1] != 'X') {
-		std::cerr << "Invalid footer! Expected 'XX', got '" << footer_bytes[0] << footer_bytes[1] << '\n';
-		throw 1;
+		return { std::move(tree), message_buffer };
+	} catch(const Tree::DeserializationException& e) {
+		throw InvalidTreeDataException();
 	}
+}
 
-	return { std::move(tree), message_buffer };
+Huffman::EncodedMessage::DeserializationException::DeserializationException() {}
+
+const char* Huffman::EncodedMessage::DeserializationException::what() const noexcept {
+	return m_Message.c_str();
+}
+
+Huffman::EncodedMessage::UnexpectedEofException::UnexpectedEofException() {
+	m_Message = "The stream ended unexpectedly. Make sure you have all of the serialized data.";
+}
+
+Huffman::EncodedMessage::InvalidHeaderException::InvalidHeaderException(std::string file_header, std::string expected_header) {
+	m_FileHeader = file_header;
+	m_ExpectedHeader = expected_header;
+
+	m_Message = "Invalid file header. Expected '" + expected_header + "', got '" + file_header + "'.";
+}
+
+std::string Huffman::EncodedMessage::InvalidHeaderException::get_file_header() const {
+	return m_FileHeader;
+}
+
+std::string Huffman::EncodedMessage::InvalidHeaderException::get_expected_header() const {
+	return m_ExpectedHeader;
+}
+
+Huffman::EncodedMessage::WrongVersionException::WrongVersionException(uint8_t file_version, uint8_t software_version) {
+	m_FileVersion = file_version;
+	m_SoftwareVersion = software_version;
+
+	m_Message = "Your software is out of date. You're using ver " + std::to_string(static_cast<uint32_t>(file_version));
+}
+
+uint8_t Huffman::EncodedMessage::WrongVersionException::get_file_version() const {
+	return m_FileVersion;
+}
+
+uint8_t Huffman::EncodedMessage::WrongVersionException::get_software_version() const {
+	return m_SoftwareVersion;
+}
+
+Huffman::EncodedMessage::InvalidTreeDataException::InvalidTreeDataException() {
+	m_Message = "Serialized tree data is invalid.";
+}
+
+Huffman::EncodedMessage::InvalidFooterException::InvalidFooterException(std::string file_footer, std::string expected_footer) {
+	m_FileFooter = file_footer;
+	m_ExpectedFooter = expected_footer;
+
+	m_Message = "Invalid footer. Expected '" + expected_footer + "', got '" + file_footer + "'.";
+}
+
+std::string Huffman::EncodedMessage::InvalidFooterException::get_file_footer() const {
+	return m_FileFooter;
+}
+
+std::string Huffman::EncodedMessage::InvalidFooterException::get_expected_footer() const {
+	return m_ExpectedFooter;
 }
