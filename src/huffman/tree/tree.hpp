@@ -63,6 +63,6 @@ namespace Huffman {
 		void preorder_serialization(Buffer& output, const std::unique_ptr<Node>& current_node) const;
 
 		// A helper function for the `deserialize` method
-		static void preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input);
+		static void preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input, const Buffer::BitIterator& end);
 	};
 };

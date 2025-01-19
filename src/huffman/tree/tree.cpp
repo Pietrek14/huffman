@@ -127,26 +127,36 @@ Huffman::Tree Huffman::Tree::deserialize(const Buffer& buffer) {
 
 	Tree result('\0', 0);
 
-	preorder_deserialization(result.m_Root, it);
+	preorder_deserialization(result.m_Root, it, buffer.bit_end());
 
 	return result;
 }
 
-void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input) {
+#include <iostream>
+
+void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input, const Buffer::BitIterator& end) {
 	for(int i = 0; i < 2; i++) {
 		bool character_in_node = *input;
 		++input;
 
+		if(input == end) {
+			throw "shit";
+		}
+
 		if(character_in_node) {
 			auto character = std::to_integer<uint8_t>(input.next_byte());
+
+			// std::cout << "on character: " << character << '\n';
 
 			if(i == 0)
 				root->push_left(std::make_unique<Node>(character, 0));
 			else
 				root->push_right(std::make_unique<Node>(character, 0));
 		} else {
+			// std::cout << "empty node\n";
+
 			auto node = std::make_unique<Node>('\0', 0);
-			preorder_deserialization(node, input);
+			preorder_deserialization(node, input, end);
 			if(i == 0)
 				root->push_left(std::move(node));
 			else

@@ -1,6 +1,7 @@
-huffman.exe
+hff.exe
 .vscode
 obj
 
 # Used for testing
+test.txt
 out.hff

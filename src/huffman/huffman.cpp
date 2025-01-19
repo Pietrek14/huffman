@@ -16,7 +16,9 @@ Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 
 	std::string message = "";
 
-	uint8_t current_character;
+	input >> std::noskipws;
+
+	char current_character;
 	while(input >> current_character) {
 		occurances[current_character - 1]++;
 		message += current_character;

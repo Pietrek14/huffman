@@ -92,6 +92,10 @@ Huffman::Buffer::BitIterator Huffman::Buffer::bit_begin() const {
 }
 
 Huffman::Buffer::BitIterator Huffman::Buffer::bit_end() const {
+	if(m_LastByteLength == 8) {
+		return BitIterator(m_Buffer.end(), 0);
+	}
+
 	return BitIterator(m_Buffer.end() - 1, m_LastByteLength);
 }
 

@@ -1,55 +1,46 @@
 #include <iostream>
-#include <sstream>
-#include <fstream>
+#include <vector>
+#include <stdexcept>
 
-#include "huffman/huffman.hpp"
+#include "huffman/buffer/buffer.hpp"
+#include "interface.hpp"
 
 int main(int argc, const char* argv[]) {
-	std::cout << "hello\n";
+	// Huffman::Buffer buffer1, buffer2;
 
-	std::string input;
+	// buffer1 <<= std::byte('a');
 
-	std::cin >> input;
+	// for(auto it = buffer1.bit_begin(); it != buffer1.bit_end(); ++it) {
+	// 	std::cout << *it;
+	// }
 
-	std::stringstream input_stream(input);
+	// std::cout << '\n';
 
-	Huffman::EncodedMessage message = Huffman::encode(input_stream);
+	// buffer2 <<= buffer1;
 
-	std::cout << "Encoded message: ";
+	// for(auto byte : buffer2) {
+	// 	std::cout << (char)byte;
+	// }
+	// for(auto it = buffer2.bit_begin(); it != buffer2.bit_end(); ++it) {
+	// 	std::cout << *it;
+	// }
 
-	auto buffer = message.message_buffer;
+	// return 0;
 
-	for(auto it = buffer.bit_begin(); it != buffer.bit_end(); ++it) {
-		std::cout << (*it ? '1' : '0');
+	std::vector<std::string> args(argc);
+
+	for(uint16_t i = 0; i < argc; i++) {
+		args[i] = argv[i];
 	}
 
-	std::cout << '\n';
+	try {
+		const Action action(args);
 
-	std::ofstream output;
-	output.open("out.hff", std::ios::binary | std::ios::out);
-
-	message.serialize(output);
-
-	output.close();
-
-	std::ifstream input_file;
-	input_file.open("out.hff", std::ios::binary | std::ios::in);
-
-	auto deserialized_message = Huffman::EncodedMessage::deserialize(input_file);
-
-	input_file.close();
-
-	std::cout << "Encoded message: ";
-
-	for(auto it = deserialized_message.message_buffer.bit_begin(); it != deserialized_message.message_buffer.bit_end(); ++it) {
-		std::cout << (*it ? '1' : '0');
+		action.perform();
+	} catch(const std::exception& e) {
+		std::cerr << e.what();
+		return 1;
 	}
-
-	std::cout << '\n';
-
-	std::cout << "Decoded message: ";
-	Huffman::decode(deserialized_message, std::cout);
-	std::cout << '\n';
 
 	return 0;
 }

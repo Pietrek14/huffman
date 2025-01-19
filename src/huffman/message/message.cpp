@@ -68,17 +68,25 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	// Content section
 
 	// TODO: Check if the bytes are actually in the file
-	char tree_size_bytes[2];
-	input.read(tree_size_bytes, 2);
-	uint16_t tree_size = tree_size_bytes[0];
-	tree_size |= tree_size_bytes[1] << 8;
+	char tree_size_chars[2];
+	input.read(tree_size_chars, 2);
+	std::byte tree_size_bytes[2];
+	for(uint8_t i = 0; i < 4; i++) {
+		tree_size_bytes[i] = std::byte(tree_size_chars[i]);
+	}
+	uint16_t tree_size = std::to_integer<uint16_t>(tree_size_bytes[0]);
+	tree_size |= std::to_integer<uint16_t>(tree_size_bytes[1]) << 8;
 
-	char message_size_bytes[4];
-	input.read(message_size_bytes, 4);
-	uint32_t message_size = message_size_bytes[0];
-	message_size |= message_size_bytes[1] << 8;
-	message_size |= message_size_bytes[2] << 16;
-	message_size |= message_size_bytes[3] << 24;
+	char message_size_chars[4];
+	input.read(message_size_chars, 4);
+	std::byte message_size_bytes[4];
+	for(uint8_t i = 0; i < 4; i++) {
+		message_size_bytes[i] = std::byte(message_size_chars[i]);
+	}
+	uint32_t message_size = std::to_integer<uint32_t>(message_size_bytes[0]);
+	message_size |= std::to_integer<uint32_t>(message_size_bytes[1]) << 8;
+	message_size |= std::to_integer<uint32_t>(message_size_bytes[2]) << 16;
+	message_size |= std::to_integer<uint32_t>(message_size_bytes[3]) << 24;
 
 	uint64_t content_buffer_bits_num = tree_size + message_size;
 	uint16_t content_buffer_bytes_num = content_buffer_bits_num / 8 + (content_buffer_bits_num % 8 > 0);
@@ -119,6 +127,7 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 
 		index++;
 	}
+
 	Tree tree = Tree::deserialize(tree_buffer);
 
 	// Footer section
