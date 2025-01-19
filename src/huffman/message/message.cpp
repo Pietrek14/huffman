@@ -71,7 +71,6 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 
 	// Content section
 
-	// TODO: Check if the bytes are actually in the file
 	char tree_size_chars[2];
 	input.read(tree_size_chars, 2);
 	ensure_stream_read_success(input);

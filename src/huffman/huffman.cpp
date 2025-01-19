@@ -55,7 +55,7 @@ Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 
 	// Fuse the trees into one Huffman tree
 	while(tree_queue.size() > 1) {
-		// TODO: If there's time left, implement own priority queue to avoid this dumb shit
+		// We have to do it this way because of reasons explained below
 		// https://stackoverflow.com/questions/20149471/move-out-element-of-std-priority-queue-in-c11
 		Tree tree1 = std::move(const_cast<Tree&>(tree_queue.top()));
 		tree_queue.pop();

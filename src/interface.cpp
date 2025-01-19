@@ -103,7 +103,6 @@ void Action::decode() const {
 		throw FailedFileReadException(m_Args[0]);
 	}
 
-	// TODO: This function is going to throw exceptions in the future
 	auto deserialized_message = Huffman::EncodedMessage::deserialize(input);
 
 	input.close();
