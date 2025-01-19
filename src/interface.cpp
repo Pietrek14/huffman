@@ -11,6 +11,7 @@ Action::Action(const std::vector<std::string>& args) {
 	}
 
 	if(args.size() < 2) {
+		// throw std::runtime_error("AAAA");
 		throw NoActionException();
 	}
 

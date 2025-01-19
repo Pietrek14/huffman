@@ -29,7 +29,7 @@ public:
 	void perform() const;
 
 	// Exception types
-private:
+public:
 	class Exception : public std::exception {
 	protected:
 		std::string m_Message;
@@ -40,13 +40,12 @@ private:
 		const char* what() const noexcept override;
 	};
 
-public:
 	class IncorrectCallException : public Exception {
 	public:
 		IncorrectCallException();
 	};
 
-	class NoActionException : Exception {
+	class NoActionException : public Exception {
 	public:
 		NoActionException();
 	};

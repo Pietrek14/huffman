@@ -6,27 +6,6 @@
 #include "interface.hpp"
 
 int main(int argc, const char* argv[]) {
-	// Huffman::Buffer buffer1, buffer2;
-
-	// buffer1 <<= std::byte('a');
-
-	// for(auto it = buffer1.bit_begin(); it != buffer1.bit_end(); ++it) {
-	// 	std::cout << *it;
-	// }
-
-	// std::cout << '\n';
-
-	// buffer2 <<= buffer1;
-
-	// for(auto byte : buffer2) {
-	// 	std::cout << (char)byte;
-	// }
-	// for(auto it = buffer2.bit_begin(); it != buffer2.bit_end(); ++it) {
-	// 	std::cout << *it;
-	// }
-
-	// return 0;
-
 	std::vector<std::string> args(argc);
 
 	for(uint16_t i = 0; i < argc; i++) {
@@ -37,8 +16,29 @@ int main(int argc, const char* argv[]) {
 		const Action action(args);
 
 		action.perform();
-	} catch(const std::exception& e) {
-		std::cerr << e.what();
+	} catch(const Action::NoActionException& e) {
+		std::cerr << "No command given! For a list of available commands use `hff.exe help`.\n";
+
+		return 1;
+	} catch(const Action::UnknownActionException& e) {
+		std::cerr << "Unknown command: '" << e.get_action_name() << "'. For a list of available commands use `hff.exe help`\n";
+
+		return 1;
+	} catch(const Action::WrongArgumentCountException& e) {
+		auto expected_arg_count = Action::expected_arg_count(e.get_action_type());
+
+		std::cerr << "Command '" << Action::action_name(e.get_action_type())
+			<< "' expects " << expected_arg_count << (Action::expected_arg_count(e.get_action_type()) == 1 ? " argument" : " arguments")
+			<< ", supplied with " << e.get_argument_count() << ".\n";
+
+		return 1;
+	} catch(const Action::FailedFileReadException& e) {
+		std::cerr << "Failed to read from file '" << e.get_filename() << "'. Make sure it exists and you have the necessary permissions.\n";
+
+		return 1;
+	} catch(const Action::FailedFileWriteException& e) {
+		std::cerr << "Failed to write to file '" << e.get_filename() << "'. Make sure you have the necessary permissions.\n";
+
 		return 1;
 	}
 
