@@ -8,7 +8,10 @@ class Action {
 	enum class ActionType {
 		Encode,
 		Decode,
+		DecodeToFile,
+#ifdef HFF_DEBUG
 		Test,
+#endif
 		Help
 	};
 
@@ -17,7 +20,10 @@ class Action {
 
 	void encode() const;
 	void decode() const;
+	void decode_to_file() const;
+#ifdef HFF_DEBUG
 	void test() const;
+#endif
 	void help() const;
 
 public:

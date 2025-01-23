@@ -11,7 +11,6 @@ Action::Action(const std::vector<std::string>& args) {
 	}
 
 	if(args.size() < 2) {
-		// throw std::runtime_error("AAAA");
 		throw NoActionException();
 	}
 
@@ -19,11 +18,17 @@ Action::Action(const std::vector<std::string>& args) {
 
 	if(action_name == "decode" || action_name == "d") {
 		m_Type = ActionType::Decode;
+	} else if(action_name == "decode-to-file" || action_name == "df") {
+		m_Type = ActionType::DecodeToFile;
 	} else if(action_name == "encode" || action_name == "e") {
 		m_Type = ActionType::Encode;
-	} else if(action_name == "test" || action_name == "t") {
+	} 
+#ifdef HFF_DEBUG
+	else if(action_name == "test" || action_name == "t") {
 		m_Type = ActionType::Test;
-	} else if(action_name == "help" || action_name == "h") {
+	}
+#endif
+	else if(action_name == "help" || action_name == "h") {
 		m_Type = ActionType::Help;
 	} else {
 		throw UnknownActionException(action_name);
@@ -45,11 +50,16 @@ std::string Action::action_name(ActionType action_type) {
 	case ActionType::Decode:
 		return "decode";
 
+	case ActionType::DecodeToFile:
+		return "decode-to-file";
+
 	case ActionType::Encode:
 		return "encode";
 
+#ifdef HFF_DEBUG
 	case ActionType::Test:
 		return "test";
+#endif
 
 	case ActionType::Help:
 		return "help";
@@ -63,11 +73,16 @@ uint16_t Action::expected_arg_count(ActionType action_type) {
 	case ActionType::Decode:
 		return 1;
 
+	case ActionType::DecodeToFile:
+		return 2;
+
 	case ActionType::Encode:
 		return 2;
 
+#ifdef HFF_DEBUG
 	case ActionType::Test:
 		return 1;
+#endif
 
 	case ActionType::Help:
 		return 0;
@@ -82,13 +97,19 @@ void Action::perform() const {
 		decode();
 		break;
 
+	case ActionType::DecodeToFile:
+		decode_to_file();
+		break;
+
 	case ActionType::Encode:
 		encode();
 		break;
 
+#ifdef HFF_DEBUG
 	case ActionType::Test:
 		test();
 		break;
+#endif
 
 	case ActionType::Help:
 		help();
@@ -108,6 +129,28 @@ void Action::decode() const {
 	input.close();
 
 	Huffman::decode(deserialized_message, std::cout);
+}
+
+void Action::decode_to_file() const {
+	std::ifstream input(m_Args[0], std::ios::binary | std::ios::in);
+
+	if(!input.good()) {
+		throw FailedFileReadException(m_Args[0]);
+	}
+
+	auto deserialized_message = Huffman::EncodedMessage::deserialize(input);
+
+	input.close();
+
+	std::ofstream output(m_Args[1], std::ios::binary | std::ios::out);
+
+	if(!output.good()) {
+		throw FailedFileWriteException(m_Args[1]);
+	}
+
+	Huffman::decode(deserialized_message, output);
+
+	output.close();
 }
 
 void Action::encode() const {
@@ -132,6 +175,7 @@ void Action::encode() const {
 	output.close();
 }
 
+#ifdef HFF_DEBUG
 void Action::test() const {
 	std::ifstream input(m_Args[0], std::ios::binary | std::ios::in);
 
@@ -145,6 +189,7 @@ void Action::test() const {
 
 	Huffman::decode(message, std::cout);
 }
+#endif
 
 void Action::help() const {
 	std::cout
@@ -159,17 +204,22 @@ void Action::help() const {
 		<< "Usage: hff.exe <command> <args>\n"
 		<< "Available commands:\n"
 
-		<< "\tencode\n"
+		<< "\tencode / e\n"
 		<< "\t\targs: <input file> <output file>\n"
 		<< "\t\tencodes the input file using Huffman encoding"
 		<< "and serializes the results into the output file.\n"
 
-		<< "\tdecode\n"
+		<< "\tdecode / d\n"
 		<< "\t\targs: <input file>\n"
 		<< "\t\tdecodes the input file serialized with the encode command"
 		<< "and outputs the results into cmd.\n"
 
-		<< "\thelp\n"
+		<< "\tdecode-to-file / df\n"
+		<< "\t\targs: <input file> <output file>\n"
+		<< "\t\tdecodes the input file serialized with the encode command"
+		<< "and outputs the results into the output file.\n"
+
+		<< "\thelp / h\n"
 		<< "\t\targs: none\n"
 		<< "\t\tdisplays this\n";
 }
