@@ -69,6 +69,10 @@ bool Huffman::Buffer::operator==(const Buffer& buffer) const {
 	return true;
 }
 
+void Huffman::Buffer::reserve_bytes(uint32_t bytes_num) {
+	m_Buffer.reserve(bytes_num);
+}
+
 size_t Huffman::Buffer::hash() const {
 	size_t seed = m_Buffer.size();
 

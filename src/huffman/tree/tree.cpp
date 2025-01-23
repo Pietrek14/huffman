@@ -138,6 +138,10 @@ Huffman::Tree Huffman::Tree::deserialize(const Buffer& buffer) {
 
 void Huffman::Tree::preorder_deserialization(std::unique_ptr<Node>& root, Buffer::BitIterator& input, const Buffer::BitIterator& end) {
 	for(int i = 0; i < 2; i++) {
+		if(input == end) {
+			throw Buffer::BitIterator::IteratorEndReachedException();
+		}
+
 		bool character_in_node = *input;
 		++input;
 

@@ -22,6 +22,8 @@ namespace Huffman {
 		Buffer operator<<(Buffer buffer) const;
 		void operator<<=(Buffer buffer);
 
+		void reserve_bytes(uint32_t bytes_num);
+
 		// Necessary to be used as keys in a dictionary
 		bool operator==(const Buffer& other) const;
 		size_t hash() const;

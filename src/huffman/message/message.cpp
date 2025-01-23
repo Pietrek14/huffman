@@ -70,7 +70,6 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	}
 
 	// Content section
-
 	char tree_size_chars[2];
 	input.read(tree_size_chars, 2);
 	ensure_stream_read_success(input);
@@ -94,44 +93,87 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	message_size |= std::to_integer<uint32_t>(message_size_bytes[3]) << 24;
 
 	uint64_t content_buffer_bits_num = tree_size + message_size;
-	uint16_t content_buffer_bytes_num = content_buffer_bits_num / 8 + (content_buffer_bits_num % 8 > 0);
+	uint8_t padding_size = content_buffer_bits_num % 8;
+	uint32_t content_buffer_bytes_num = content_buffer_bits_num / 8 + (padding_size > 0);
 
-	// This can fail if content_buffer_bytes_num is too large
-	char* content_buffer_bytes = new char[content_buffer_bytes_num];
+	// Read the content bytes in 64 byte buffers
+	uint32_t bytes_left = content_buffer_bytes_num;
+	const uint32_t temp_buffer_size = 64;
 
-	// This can fail if the file ends unexpectedly
-	input.read(content_buffer_bytes, content_buffer_bytes_num);
-	ensure_stream_read_success(input);
+	Buffer tree_buffer, message_buffer;
+	tree_buffer.reserve_bytes(tree_size / 8 + (tree_size % 8 > 0));
+	message_buffer.reserve_bytes(message_size / 8 + (message_size % 8 > 0));
 
-	Buffer content_buffer;
+	bool on_message = false;
 
-	for(uint16_t i = 0; i < content_buffer_bytes_num - 1; i++) {
-		content_buffer <<= std::byte(content_buffer_bytes[i]);
+	while(bytes_left > temp_buffer_size) {
+		char content_bytes[temp_buffer_size];
+
+		input.read(content_bytes, temp_buffer_size);
+		ensure_stream_read_success(input);
+
+		bytes_left -= temp_buffer_size;
+		uint32_t bytes_read = content_buffer_bytes_num - bytes_left;
+
+		if(bytes_read < tree_size / 8) {
+			for(uint32_t i = 0; i < temp_buffer_size; i++) {
+				tree_buffer <<= std::byte(content_bytes[i]);
+			}
+		} else if(!on_message) {
+			uint32_t byte_index = 0;
+
+			// First, go over the bytes that contain only the tree information
+			for(; byte_index < temp_buffer_size - (bytes_read - tree_size / 8); byte_index++) {
+				tree_buffer <<= std::byte(content_bytes[byte_index]);
+			}
+
+			// Divide the common byte between the two buffers
+			uint8_t bit_index = 0;
+
+			// The byte that contains both tree and message information
+			std::byte common_byte = std::byte(content_bytes[byte_index]);
+
+			for(; bit_index < tree_size % 8; bit_index++) {
+				tree_buffer <<= static_cast<bool>((common_byte >> (7 - bit_index)) & std::byte(1));
+			}
+
+			for(; bit_index < 8; bit_index++) {
+				message_buffer <<= static_cast<bool>((common_byte >> (7 - bit_index)) & std::byte(1));
+			}
+
+			byte_index++;
+
+			// Add the rest of the bytes to the message buffer
+			for(; byte_index < temp_buffer_size; byte_index++) {
+				message_buffer <<= std::byte(content_bytes[byte_index]);
+			}
+
+			// On the next iterations, simply add the bytes to the message buffer
+			on_message = true;
+		} else {
+			for(uint32_t i = 0; i < temp_buffer_size; i++) {
+				message_buffer <<= std::byte(content_bytes[i]);
+			}
+		}
 	}
 
-	for(uint8_t i = 0; i < content_buffer_bits_num % 8; i++) {
-		content_buffer <<= static_cast<bool>(content_buffer_bytes[content_buffer_bytes_num - 1] & (1 << (7 - i)));
+	// Now there are less than 64 bytes left to read
+	char content_bytes[temp_buffer_size];
+
+	input.read(content_bytes, bytes_left);
+	ensure_stream_read_success(input);
+
+	for(uint32_t i = 0; i < bytes_left - 1; i++) {
+		message_buffer <<= std::byte(content_bytes[i]);
+	}
+
+	for(uint8_t i = 0; i < padding_size; i++) {
+		message_buffer <<= static_cast<bool>(content_bytes[bytes_left - 1] & (1 << (7 - i)));
 	}
 
 	// If there's no padding
-	if(content_buffer_bits_num % 8 == 0) {
-		content_buffer <<= std::byte(content_buffer_bytes[content_buffer_bytes_num - 1]);
-	}
-
-	delete[] content_buffer_bytes;
-
-	// TODO: There are quicker ways to do this
-	Buffer tree_buffer, message_buffer;
-	uint64_t index = 0;
-
-	for(auto it = content_buffer.bit_begin(); it != content_buffer.bit_end(); ++it) {
-		if(index < tree_size) {
-			tree_buffer <<= *it;
-		} else {
-			message_buffer <<= *it;
-		}
-
-		index++;
+	if(padding_size == 0) {
+		message_buffer <<= std::byte(content_bytes[bytes_left - 1]);
 	}
 
 	try {
