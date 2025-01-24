@@ -53,8 +53,6 @@ void Huffman::EncodedMessage::ensure_stream_read_success(std::istream& stream) {
 	}
 }
 
-#include <iostream>
-
 Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input) {
 	// Header section
 	char header_section[4];
@@ -143,7 +141,7 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 				tree_buffer <<= static_cast<bool>((common_byte >> (7 - bit_index)) & std::byte(1));
 			}
 
-			for(; bit_index < 8; bit_index++) {
+			for(; bit_index < 8 && message_size - message_bits_read > 0; bit_index++) {
 				message_buffer <<= static_cast<bool>((common_byte >> (7 - bit_index)) & std::byte(1));
 				message_bits_read++;
 			}
