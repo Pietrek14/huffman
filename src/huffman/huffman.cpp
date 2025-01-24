@@ -18,7 +18,7 @@ Huffman::EncodedMessage Huffman::encode(std::istream& input) {
 
 	input >> std::noskipws;
 
-	char current_character, prev_character = '\0';
+	uint8_t current_character, prev_character = '\0';
 	bool multiple_chars = false;
 	while(input >> current_character) {
 		occurances[current_character - 1]++;

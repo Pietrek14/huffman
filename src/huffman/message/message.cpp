@@ -53,6 +53,8 @@ void Huffman::EncodedMessage::ensure_stream_read_success(std::istream& stream) {
 	}
 }
 
+#include <iostream>
+
 Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input) {
 	// Header section
 	char header_section[4];
@@ -105,25 +107,29 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 	message_buffer.reserve_bytes(message_size / 8 + (message_size % 8 > 0));
 
 	bool on_message = false;
+	uint64_t message_bits_read = 0;
 
-	while(bytes_left > temp_buffer_size) {
+	while(bytes_left > 0) {
 		char content_bytes[temp_buffer_size];
 
-		input.read(content_bytes, temp_buffer_size);
+		uint32_t bytes_read_this_iteration = bytes_left > temp_buffer_size ? temp_buffer_size : bytes_left;
+
+		input.read(content_bytes, bytes_read_this_iteration);
 		ensure_stream_read_success(input);
 
-		bytes_left -= temp_buffer_size;
+		bytes_left -= bytes_read_this_iteration;
 		uint32_t bytes_read = content_buffer_bytes_num - bytes_left;
 
 		if(bytes_read < tree_size / 8) {
-			for(uint32_t i = 0; i < temp_buffer_size; i++) {
+			// Add the bytes to the tree buffer
+			for(uint32_t i = 0; i < bytes_read_this_iteration; i++) {
 				tree_buffer <<= std::byte(content_bytes[i]);
 			}
 		} else if(!on_message) {
 			uint32_t byte_index = 0;
 
 			// First, go over the bytes that contain only the tree information
-			for(; byte_index < temp_buffer_size - (bytes_read - tree_size / 8); byte_index++) {
+			for(; byte_index < bytes_read_this_iteration - (bytes_read - tree_size / 8); byte_index++) {
 				tree_buffer <<= std::byte(content_bytes[byte_index]);
 			}
 
@@ -139,41 +145,40 @@ Huffman::EncodedMessage Huffman::EncodedMessage::deserialize(std::istream& input
 
 			for(; bit_index < 8; bit_index++) {
 				message_buffer <<= static_cast<bool>((common_byte >> (7 - bit_index)) & std::byte(1));
+				message_bits_read++;
 			}
 
 			byte_index++;
 
 			// Add the rest of the bytes to the message buffer
-			for(; byte_index < temp_buffer_size; byte_index++) {
+			for(; byte_index < bytes_read_this_iteration && message_size - message_bits_read >= 8; byte_index++) {
 				message_buffer <<= std::byte(content_bytes[byte_index]);
+				message_bits_read += 8;
+			}
+
+			// Add bits without padding
+			if(message_bits_read != message_size && message_size - message_bits_read < 8) {
+				for(uint8_t i = 0; i < message_size - message_bits_read; i++) {
+					message_buffer <<= static_cast<bool>(content_bytes[bytes_read_this_iteration - 1] & (1 << (7 - i)));
+				}
 			}
 
 			// On the next iterations, simply add the bytes to the message buffer
 			on_message = true;
 		} else {
-			for(uint32_t i = 0; i < temp_buffer_size; i++) {
+			// Add the bytes to the message buffer
+			for(uint32_t i = 0; i < bytes_read_this_iteration && message_size - message_bits_read >= 8; i++) {
 				message_buffer <<= std::byte(content_bytes[i]);
+				message_bits_read += 8;
+			}
+
+			// Add bits without padding
+			if(message_bits_read != message_size && message_size - message_bits_read < 8) {
+				for(uint8_t i = 0; i < message_size - message_bits_read; i++) {
+					message_buffer <<= static_cast<bool>(content_bytes[bytes_read_this_iteration - 1] & (1 << (7 - i)));
+				}
 			}
 		}
-	}
-
-	// Now there are less than 64 bytes left to read
-	char content_bytes[temp_buffer_size];
-
-	input.read(content_bytes, bytes_left);
-	ensure_stream_read_success(input);
-
-	for(uint32_t i = 0; i < bytes_left - 1; i++) {
-		message_buffer <<= std::byte(content_bytes[i]);
-	}
-
-	for(uint8_t i = 0; i < padding_size; i++) {
-		message_buffer <<= static_cast<bool>(content_bytes[bytes_left - 1] & (1 << (7 - i)));
-	}
-
-	// If there's no padding
-	if(padding_size == 0) {
-		message_buffer <<= std::byte(content_bytes[bytes_left - 1]);
 	}
 
 	try {
